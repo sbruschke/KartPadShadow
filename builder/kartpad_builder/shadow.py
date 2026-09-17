@@ -245,7 +245,9 @@ def build(args: argparse.Namespace) -> None:
     run(["bash", str(REPO / "scripts/build-ios-device-game-app.sh"), str(runtime_source),
          str(xcode_build), str(translation), "base"], env=env)
     app = xcode_build / "Release-iphoneos/KartPad.app"
-    audit_app(app, (str(REPO), str(Path.home()), str(work)))
+    # The CI runner's home (/Users/runner) appears in the prebuilt dependency
+    # objects; only the checkout/work paths are treated as private here.
+    audit_app(app, (str(REPO), str(work)))
     provenance = {
         "schemaVersion": 1,
         "builder": "kartpad-shadow",
