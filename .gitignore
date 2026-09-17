@@ -58,3 +58,9 @@ DerivedData/
 # Generated Python bytecode
 __pycache__/
 *.py[cod]
+
+# KartPad Shadow: never commit plaintext Nintendo binaries or their translation.
+*.dol
+StaticR*.rel
+/private-inputs/*
+!/private-inputs/*.enc

@@ -23,7 +23,7 @@ test -f "${app}/Assets.car"
 test -f "${app}/initial_pipeline_cache.db"
 test -f "${app}/dsp_coef.bin"
 plutil -lint "${plist}" "${app}/PrivacyInfo.xcprivacy" >/dev/null
-test "$(plutil -extract CFBundleIdentifier raw "${plist}")" = "dev.kartpad.app"
+test "$(plutil -extract CFBundleIdentifier raw "${plist}")" = "${KARTPAD_EXPECTED_BUNDLE_ID:-dev.dxshdw.kartpadshadow}"
 test "$(plutil -extract CFBundleExecutable raw "${plist}")" = "KartPad"
 test "$(plutil -extract MinimumOSVersion raw "${plist}")" = "16.0"
 test "$(plutil -extract UIApplicationSceneManifest.UISceneConfigurations.UIWindowSceneSessionRoleApplication.0.UISceneDelegateClassName raw "${plist}")" = "SDLUIKitSceneDelegate"
@@ -123,8 +123,8 @@ for importer_contract in \
   'Game-file extraction was incomplete' \
   'RemoveGameDataOnNextLaunch' \
   'Game Data Removal Scheduled' \
-  'KartPad currently supports RMCP01 (PAL), disc 0, revision 0 only.' \
-  'The validated RMCP01 data is stored privately.' \
+  'KartPad Shadow supports RMCE01 (NTSC-U), disc 0, revision 0 only.' \
+  'The validated RMCE01 data is stored privately.' \
   'GameData.import-' \
   'NSFileProtectionCompleteUntilFirstUserAuthentication'; do
   # NSString literals containing typographic punctuation are stored as UTF-16.

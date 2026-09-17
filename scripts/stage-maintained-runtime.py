@@ -23,6 +23,10 @@ def source_checkout(repo: Path, platform: str, *, initialize: bool) -> tuple[Pat
         raise ValueError(f"unsupported runtime platform: {platform}")
     relative = f"vendor/runtimes/{platform}"
     source = repo / relative
+    if (source / "VENDORED.md").is_file():
+        # KartPad Shadow vendors this runtime as ordinary tracked files (no
+        # gitlink). Identify it by the parent repository's tree for the path.
+        return source, git(repo, "rev-parse", f"HEAD:{relative}")
     entry = git(repo, "ls-files", "--stage", "--", relative).split()
     if len(entry) != 4 or entry[0] != "160000" or entry[2] != "0":
         raise ValueError(f"missing or conflicted runtime submodule pin: {relative}")

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "mkwii-rmce01-shadow",
+  "displayName": "Mario Kart Wii NTSC-U RMCE01 revision 0 (Shadow)",
+  "game": {
+    "discId": "RMCE01",
+    "region": "E",
+    "discNumber": 0,
+    "revision": 0,
+    "wiiMagic": "5d1c9ea3"
+  },
+  "inputs": {
+    "dol": {
+      "name": "main.dol",
+      "sha256": "d2beec1b1645fcd134efe9e7e63774b546667764ed8d431029daccd725995694"
+    },
+    "rel": {
+      "name": "StaticR.shadow.rel",
+      "loadAddress": "0x8050BF60",
+      "sha256": "2657442e054c9f4cb2eb7c413cb2d9f7f52c1cda0d923f857baa444cd7c4cce6",
+      "note": "Clean RMCE01 StaticR.rel (1168107f...a617) with Gecko 0485F714 38000011 baked in at file offset 0x3537B4"
+    }
+  },
+  "translation": {
+    "memoryBase": "0x80000000",
+    "memorySize": "0x01A00000",
+    "sdaBase": "0x80388880",
+    "sda2Base": "0x8038AC20",
+    "entryPoints": ["0x800060A4"],
+    "functionMap": "vendor/runtimes/ios/projects/mkwii-ntsc-u/MAP.txt",
+    "nativeRegistrationRoot": "vendor/runtimes/ios/runtime/src",
+    "nativeAbiDirectories": ["vendor/runtimes/ios/runtime/src/hle/gx"],
+    "guestAddressTable": "vendor/runtimes/ios/runtime/include/region/rmce01.h",
+    "guestAddressTableInclude": "region/rmce01.h",
+    "injectors": [
+      {"function": "func_80596A54.cpp", "script": "scripts/shadow/inject-rmce01-camera-lifecycle-guard.py"}
+    ],
+    "expectedGeneratedFunctions": 29446,
+    "expectedBaseFunctions": 28874
+  }
+}

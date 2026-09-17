@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -59,6 +60,11 @@ def manifest(repo, runtime=None, translation=None):
                 raise ValueError("source fingerprint requires resolved index entries")
             path = root / name
             if mode == "160000":
+                if not path.is_symlink() and not (path / ".git").exists() and os.environ.get("KARTPAD_SHADOW") == "1":
+                    # KartPad Shadow CI does not check out the unused macOS/
+                    # Android/tvOS runtime submodules; record the pin only.
+                    dependencies.append({"commit": descriptor.decode().split()[1], "uninitialized": True})
+                    continue
                 if path.is_symlink() or not (path / ".git").exists():
                     raise ValueError("source fingerprint requires initialized source submodules")
                 commit = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"]).decode().strip()

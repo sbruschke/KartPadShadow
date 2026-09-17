@@ -1,4 +1,7 @@
 #import "../mobile/KartPadPrivateServerSettings.h"
+// KartPad Shadow: NTSC-U (RMCE01) base-game-only build. Retro Rewind and
+// Retro WFC are PAL-only, so their chooser/installer UI is hidden.
+#define KARTPAD_SHADOW_BASE_ONLY 1
 #import "kartpad_mobile_runtime_host.h"
 
 #import "KartPadClassicInput.h"
@@ -411,8 +414,8 @@ NSString *KartPadValidateExtractedRoot(NSString *root, NSError **error) {
     return @"The selected sys/boot.bin is truncated.";
   }
   const uint8_t *bytes = static_cast<const uint8_t *>(boot.bytes);
-  if (memcmp(bytes, "RMCP01", 6) != 0 || bytes[6] != 0 || bytes[7] != 0) {
-    return @"KartPad currently supports RMCP01 (PAL), disc 0, revision 0 only.";
+  if (memcmp(bytes, "RMCE01", 6) != 0 || bytes[6] != 0 || bytes[7] != 0) {
+    return @"KartPad Shadow supports RMCE01 (NTSC-U), disc 0, revision 0 only.";
   }
   const uint32_t magic = (static_cast<uint32_t>(bytes[0x18]) << 24) |
                          (static_cast<uint32_t>(bytes[0x19]) << 16) |
@@ -428,8 +431,8 @@ NSString *KartPadValidateExtractedRoot(NSString *root, NSError **error) {
     return @"KartPad could not hash sys/main.dol.";
   }
   if (![dolHash isEqualToString:
-      @"80d18895b39c63bd80f457398bfcbb91b7d16ac116a41a88967e954080155b05"]) {
-    return @"sys/main.dol does not match the supported RMCP01 revision 0 profile.";
+      @"d2beec1b1645fcd134efe9e7e63774b546667764ed8d431029daccd725995694"]) {
+    return @"sys/main.dol does not match the supported RMCE01 revision 0 profile.";
   }
   return nil;
 }
@@ -766,7 +769,7 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
       initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(closeSetupHelp)];
   UILabel *importTitle = [self label:@"1. Import Mario Kart Wii" style:UIFontTextStyleTitle2 secondary:NO];
   UILabel *importBody = [self label:
-      @"Use your own PAL (Europe) ISO or WBFS: RMCP01, revision 0. An extracted DATA folder also works. RVZ files must be converted before importing."
+      @"Use your own NTSC-U (USA) ISO or WBFS: RMCE01, revision 0 (for example MarioKartShadow.iso). An extracted DATA folder also works. RVZ files must be converted before importing."
       style:UIFontTextStyleBody secondary:YES];
   UILabel *retroTitle = [self label:@"2. Add Retro Rewind, if you want it" style:UIFontTextStyleTitle2 secondary:NO];
   UILabel *retroBody = [self label:[NSString stringWithFormat:
@@ -788,6 +791,10 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
       [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"",
       [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleVersion"] ?: @""]
       style:UIFontTextStyleCaption1 secondary:YES];
+#if KARTPAD_SHADOW_BASE_ONLY
+  retroTitle.hidden = YES;
+  retroBody.hidden = YES;
+#endif
   UIStackView *content = [[UIStackView alloc] initWithArrangedSubviews:
       @[importTitle, importBody, retroTitle, retroBody, supportTitle, supportBody, setup, troubleshooting, version]];
   content.axis = UILayoutConstraintAxisVertical;
@@ -840,8 +847,13 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"On Launch"
       message:@"Choose a game to open automatically. You can always return here from the in-game menu."
       preferredStyle:UIAlertControllerStyleActionSheet];
+#if KARTPAD_SHADOW_BASE_ONLY
+  NSArray<NSString *> *titles = @[@"Ask every time", @"Mario Kart Wii"];
+  NSArray<NSString *> *values = @[@"ask", @"base"];
+#else
   NSArray<NSString *> *titles = @[@"Ask every time", @"Mario Kart Wii", @"Retro Rewind"];
   NSArray<NSString *> *values = @[@"ask", @"base", @"retro_rewind"];
+#endif
   __weak KartPadFirstLaunchViewController *weakSelf = self;
   for (NSUInteger i = 0; i < titles.count; ++i) {
     NSString *value = values[i];
@@ -937,7 +949,7 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   action.accessibilityLabel = [NSString stringWithFormat:@"%@, %@", actionTitle, title.text];
   action.accessibilityHint = [NSString stringWithFormat:@"%@. %@", status, retro
       ? (installedVersion.length ? [NSString stringWithFormat:@"Installed pack %@", installedVersion] : @"Optional official pack, downloaded in the app")
-      : (self.gameDataReady ? @"Game data imported" : @"PAL Europe ISO or WBFS, RMCP01 revision zero")];
+      : (self.gameDataReady ? @"Game data imported" : @"NTSC-U ISO or WBFS, RMCE01 revision zero")];
   [action.heightAnchor constraintGreaterThanOrEqualToConstant:48].active = YES;
   [action.widthAnchor constraintGreaterThanOrEqualToConstant:190].active = YES;
   [action setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
@@ -994,7 +1006,7 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   mark.isAccessibilityElement = NO;
   [NSLayoutConstraint activateConstraints:@[[mark.widthAnchor constraintEqualToConstant:48],
       [mark.heightAnchor constraintEqualToConstant:48]]];
-  UILabel *brand = [self label:@"KartPad" style:UIFontTextStyleTitle1 secondary:NO];
+  UILabel *brand = [self label:@"KartPad Shadow" style:UIFontTextStyleTitle1 secondary:NO];
   brand.font = [UIFontMetrics.defaultMetrics scaledFontForFont:[UIFont systemFontOfSize:30 weight:UIFontWeightBold]];
   UIStackView *identity = [[UIStackView alloc] initWithArrangedSubviews:@[mark, brand]];
   identity.axis = UILayoutConstraintAxisHorizontal;
@@ -1042,9 +1054,14 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   self.footer.alignment = UIStackViewAlignmentCenter;
   self.footer.spacing = 24;
   NSString *version = KartPadRetroRewindInstaller.installedVersion;
+#if KARTPAD_SHADOW_BASE_ONLY
+  self.content = [[UIStackView alloc] initWithArrangedSubviews:@[self.header,
+      [self gameCard:NO installedVersion:version], [self divider], self.footer]];
+#else
   self.content = [[UIStackView alloc] initWithArrangedSubviews:@[self.header,
       [self gameCard:NO installedVersion:version], [self divider],
       [self gameCard:YES installedVersion:version], [self divider], self.footer]];
+#endif
   self.content.axis = UILayoutConstraintAxisVertical;
   self.content.spacing = 10;
   [self.content setCustomSpacing:24 afterView:self.header];
@@ -1539,7 +1556,7 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   }
   UIAlertController *choices =
       [UIAlertController alertControllerWithTitle:@"Choose Game Data"
-                                          message:@"Select your RMCP01 WBFS, ISO, or extracted DATA folder."
+                                          message:@"Select your RMCE01 WBFS, ISO, or extracted DATA folder."
                                    preferredStyle:UIAlertControllerStyleAlert];
   for (NSURL *root in roots) {
     [choices addAction:[UIAlertAction actionWithTitle:root.lastPathComponent
@@ -1579,7 +1596,7 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   self.choosingGameDataCopy = NO;
   UIAlertController *options =
       [UIAlertController alertControllerWithTitle:@"Game Data Required"
-          message:@"First, import your own Mario Kart Wii game: PAL (Europe), RMCP01 revision 0.\n\nChoose an ISO, WBFS, or extracted DATA folder. RVZ files must be converted first. Retro Rewind is added after this step."
+          message:@"Import your own Mario Kart Wii game: NTSC-U (USA), RMCE01 revision 0 (for example MarioKartShadow.iso).\n\nChoose an ISO, WBFS, or extracted DATA folder. RVZ files must be converted first."
           preferredStyle:UIAlertControllerStyleAlert];
   [options addAction:[UIAlertAction actionWithTitle:@"Choose WBFS, ISO, or DATA Folder…"
                                                style:UIAlertActionStyleDefault
@@ -1700,7 +1717,12 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
   self.root.modeSelected = ^(BOOL retroRewind) {
     KartPadFirstLaunchHost *strongSelf = weakSelf;
     if (strongSelf == nil || strongSelf.finished) return;
+#if KARTPAD_SHADOW_BASE_ONLY
+    (void)retroRewind;
+    strongSelf.selectedRetroRewind = NO;
+#else
     strongSelf.selectedRetroRewind = retroRewind;
+#endif
     if (!gameDataReady) {
       [strongSelf showOptions];
       return;
@@ -2384,7 +2406,9 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
         if (weakSelf.ghostManagerRequested) weakSelf.ghostManagerRequested();
       }] atIndex:1];
       [dataItems insertObject:[UIAction actionWithTitle:@"Manage Saves…" image:[UIImage systemImageNamed:@"externaldrive"] identifier:nil handler:^(__kindof UIAction *action) { if (weakSelf.saveManagerRequested) weakSelf.saveManagerRequested(); }] atIndex:2];
+#if !KARTPAD_SHADOW_BASE_ONLY
       [dataItems insertObject:[UIAction actionWithTitle:@"Manage Retro Rewind…" image:[UIImage systemImageNamed:@"arrow.clockwise"] identifier:nil handler:^(__kindof UIAction *action) { if (weakSelf.retroManagerRequested) weakSelf.retroManagerRequested(); }] atIndex:3];
+#endif
       gameData = [UIMenu menuWithTitle:dataMenu.title
                                  image:[UIImage systemImageNamed:@"externaldrive"]
                             identifier:dataMenu.identifier
@@ -3680,7 +3704,7 @@ static NSString *const kKartPadPreferredGameKey = @"KartPadPreferredGame";
           return;
         }
         [strongSelf showIntegrationAlert:@"Game Data Imported"
-                                 message:@"The validated RMCP01 data is stored privately. Close and reopen KartPad to use the new copy."];
+                                 message:@"The validated RMCE01 data is stored privately. Close and reopen KartPad to use the new copy."];
       }];
     });
   });

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#2a1646"/>
+      <stop offset="0.55" stop-color="#120a22"/>
+      <stop offset="1" stop-color="#05030b"/>
+    </radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b98cff"/>
+      <stop offset="1" stop-color="#6a2cd8"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b1030" stop-opacity="0"/>
+      <stop offset="1" stop-color="#1b1030"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- road with converging speed lines -->
+  <path d="M0 700 L1024 700 L1024 1024 L0 1024 Z" fill="url(#road)"/>
+  <g stroke="#7d4dff" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round">
+    <line x1="120" y1="560" x2="330" y2="560"/>
+    <line x1="60" y1="620" x2="300" y2="620"/>
+    <line x1="150" y1="500" x2="310" y2="500"/>
+  </g>
+  <!-- long cast shadow -->
+  <ellipse cx="520" cy="808" rx="360" ry="46" fill="#000" opacity="0.75" filter="url(#soft)"/>
+  <path d="M300 790 L900 770 L980 830 L260 850 Z" fill="#000" opacity="0.45" filter="url(#soft)"/>
+  <!-- kart -->
+  <g filter="url(#glow)">
+    <path d="M300 690 C300 640 340 610 400 606 L520 598 C560 560 610 520 680 516 L760 514 C800 514 820 540 818 580 L814 640 L880 646 C910 650 924 672 920 700 L914 730 L300 740 Z" fill="url(#body)"/>
+    <path d="M560 600 C590 566 626 544 676 542 L742 542 C770 544 782 560 780 586 L776 614 L560 622 Z" fill="#0c0718" opacity="0.85"/>
+    <rect x="236" y="640" width="90" height="40" rx="14" fill="#8e5cff"/>
+    <path d="M820 600 L900 560 L912 586 L836 628 Z" fill="#b98cff"/>
+  </g>
+  <!-- wheels -->
+  <g>
+    <circle cx="390" cy="748" r="74" fill="#0a0612" stroke="#c9a6ff" stroke-width="12"/>
+    <circle cx="390" cy="748" r="26" fill="#c9a6ff"/>
+    <circle cx="800" cy="748" r="74" fill="#0a0612" stroke="#c9a6ff" stroke-width="12"/>
+    <circle cx="800" cy="748" r="26" fill="#c9a6ff"/>
+  </g>
+  <!-- stylised S mark -->
+  <path d="M640 250 C640 190 580 168 520 168 C440 168 380 204 380 266 C380 380 640 330 640 420 C640 470 590 490 520 490 C450 490 396 466 380 420"
+        fill="none" stroke="#e9dcff" stroke-width="44" stroke-linecap="round" filter="url(#glow)"/>
+</svg>

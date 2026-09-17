@@ -50,21 +50,21 @@ NSArray<NSDictionary<NSString *, NSString *> *> *SaveLocations() {
       @"identifier": @"original",
       @"title": @"Original Mario Kart Wii",
       @"path": [support stringByAppendingPathComponent:
-          @"NAND/title/00010004/524d4350/data/rksys.dat"],
+          @"NAND/title/00010004/524d4345/data/rksys.dat"],
       @"backup": @"rksys-nand",
     },
     @{
       @"identifier": @"retro_rewind",
       @"title": @"Retro Rewind",
       @"path": [support stringByAppendingPathComponent:
-          @"RetroRewind/riivolution/save/RetroWFC/RMCP/rksys.dat"],
+          @"RetroRewind/riivolution/save/RetroWFC/RMCE/rksys.dat"],
       @"backup": @"rksys-retro-rewind",
     },
     @{
       @"identifier": @"retro_rewind_separate",
       @"title": @"Retro Rewind (Separate Save)",
       @"path": [support stringByAppendingPathComponent:
-          @"RetroRewind/riivolution/save/RetroWFC2/RMCP/rksys.dat"],
+          @"RetroRewind/riivolution/save/RetroWFC2/RMCE/rksys.dat"],
       @"backup": @"rksys-retro-rewind-separate",
     },
   ];

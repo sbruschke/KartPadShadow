@@ -58,10 +58,10 @@ void KartPadReportExtractionProgress(KartPadDiscExtractionProgress progress,
 
   const std::string gameID = volume->GetGameID(partition);
   const std::optional<u16> revision = volume->GetRevision(partition);
-  if (gameID != "RMCP01" || revision != std::optional<u16>{0}) {
+  if (gameID != "RMCE01" || revision != std::optional<u16>{0}) {
     if (error != nullptr) {
       *error = KartPadExtractionError(
-          3, @"KartPad currently supports RMCP01 (PAL), revision 0 only.");
+          3, @"KartPad Shadow supports RMCE01 (NTSC-U), revision 0 only.");
     }
     return NO;
   }

@@ -1,0 +1,209 @@
+name: Build KartPad Shadow IPA
+
+# Builds the NTSC-U (RMCE01) base-game-only KartPad IPA from the encrypted
+# private inputs and publishes it as a GitHub Release asset.
+#   gh workflow run release.yml -f version=0.4.24
+#   git tag v0.4.24 && git push origin v0.4.24     (build number = run number)
+#   git tag v0.4.24-build9 && git push origin v0.4.24-build9
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Marketing version (CFBundleShortVersionString)
+        default: "0.4.24"
+        required: true
+      release:
+        description: Publish a GitHub Release
+        type: boolean
+        default: true
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kartpad-shadow-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 330
+    env:
+      KARTPAD_XCODE_JOBS: "3"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          lfs: false
+
+      - name: Resolve version and build number
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ github.event.inputs.version }}"
+          build="${{ github.run_number }}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag="${GITHUB_REF_NAME#v}"
+            if [[ "${tag}" =~ ^([0-9]+(\.[0-9]+)*)-build([0-9]+)$ ]]; then
+              version="${BASH_REMATCH[1]}"
+              build="${BASH_REMATCH[3]}"
+            else
+              version="${tag}"
+            fi
+          fi
+          [[ "${version}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]] || { echo "bad version: ${version}" >&2; exit 64; }
+          publish="${{ github.event.inputs.release }}"
+          [[ "${GITHUB_EVENT_NAME}" == "push" ]] && publish=true
+          {
+            echo "version=${version}"
+            echo "build=${build}"
+            echo "tag=v${version}-build${build}"
+            echo "asset=KartPadShadow-${version}-build${build}.ipa"
+            echo "publish=${publish}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Select Xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -d /Applications/Xcode*.app
+          xcode="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [[ -n "${xcode}" ]]; then sudo xcode-select -s "${xcode}"; fi
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos
+          sysctl -n hw.ncpu hw.memsize
+          df -h "${GITHUB_WORKSPACE}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install build tools
+        run: |
+          brew install ninja ripgrep || true
+          cmake --version
+          ninja --version
+          rg --version
+          dotnet --info | head -20
+
+      - name: Decrypt private game inputs
+        shell: bash
+        env:
+          KARTPAD_INPUTS_KEY: ${{ secrets.KARTPAD_INPUTS_KEY }}
+        run: |
+          set -euo pipefail
+          [[ -n "${KARTPAD_INPUTS_KEY}" ]] || { echo "KARTPAD_INPUTS_KEY secret is missing" >&2; exit 1; }
+          openssl_bin="$(brew --prefix openssl@3)/bin/openssl"
+          [[ -x "${openssl_bin}" ]] || openssl_bin=openssl
+          "${openssl_bin}" version
+          inputs="${RUNNER_TEMP}/kartpad-inputs"
+          mkdir -p "${inputs}"
+          "${openssl_bin}" enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in private-inputs/inputs.tar.gz.enc -pass env:KARTPAD_INPUTS_KEY |
+            tar -xz -C "${inputs}"
+          (cd "${inputs}" && shasum -a 256 -c SHA256SUMS)
+          echo "KARTPAD_INPUTS=${inputs}" >> "${GITHUB_ENV}"
+
+      - name: Restore dependency cache (DiscIO, Dawn, sse2neon)
+        id: depcache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            build/builder-dependencies
+            build/dependency-cache
+          key: shadow-deps-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/build-ios-discio-probe.sh', 'patches/dolphin-*.patch', 'tests/ios_discio_probe.cpp', 'dependencies.lock.json') }}
+
+      - name: Build dependencies
+        id: deps
+        run: PYTHONPATH=builder python3 -m kartpad_builder.shadow deps
+
+      - name: Save dependency cache
+        if: steps.deps.outcome == 'success' && steps.depcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/builder-dependencies
+            build/dependency-cache
+          key: ${{ steps.depcache.outputs.cache-primary-key }}
+
+      - name: Translate (NTSC-U base graph)
+        run: |
+          PYTHONPATH=builder python3 -m kartpad_builder.shadow translate \
+            --dol "${KARTPAD_INPUTS}/main.dol" --rel "${KARTPAD_INPUTS}/StaticR.shadow.rel" \
+            --out "${GITHUB_WORKSPACE}/private/shadow/translation" --jobs 3
+
+      - name: Build IPA
+        run: |
+          mkdir -p artifacts
+          PYTHONPATH=builder python3 -m kartpad_builder.shadow build \
+            --dol "${KARTPAD_INPUTS}/main.dol" --rel "${KARTPAD_INPUTS}/StaticR.shadow.rel" \
+            --work-root "${GITHUB_WORKSPACE}/private/shadow" \
+            --output "artifacts/${{ steps.meta.outputs.asset }}" \
+            --version "${{ steps.meta.outputs.version }}" \
+            --build-number "${{ steps.meta.outputs.build }}" --jobs 3
+
+      - name: Verify IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          ipa="artifacts/${{ steps.meta.outputs.asset }}"
+          ls -l "${ipa}"
+          check="${RUNNER_TEMP}/ipa-check"
+          rm -rf "${check}" && mkdir -p "${check}"
+          unzip -q "${ipa}" -d "${check}"
+          app="${check}/Payload/KartPad.app"
+          python3 - "${app}/Info.plist" <<'PY'
+          import plistlib, sys
+          p = plistlib.load(open(sys.argv[1], "rb"))
+          print({k: p.get(k) for k in ("CFBundleIdentifier", "CFBundleDisplayName", "CFBundleShortVersionString", "CFBundleVersion", "CFBundleExecutable")})
+          assert p["CFBundleIdentifier"] == "dev.dxshdw.kartpadshadow"
+          assert p["CFBundleDisplayName"] == "KartPad Shadow"
+          PY
+          file "${app}/KartPad"
+          if find "${check}" \( -iname '*.dol' -o -iname '*.rel' -o -iname '*.iso' -o -iname '*.wbfs' -o -iname 'rksys.dat' \) | grep .; then
+            echo "IPA contains game data" >&2; exit 1
+          fi
+          shasum -a 256 "${ipa}" | tee "${ipa}.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.asset }}
+          path: |
+            artifacts/${{ steps.meta.outputs.asset }}
+            artifacts/${{ steps.meta.outputs.asset }}.sha256
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: steps.meta.outputs.publish == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.meta.outputs.tag }}"
+          asset="artifacts/${{ steps.meta.outputs.asset }}"
+          if ! gh release view "${tag}" >/dev/null 2>&1; then
+            gh release create "${tag}" --target "${GITHUB_SHA}" \
+              --title "KartPad Shadow ${{ steps.meta.outputs.version }} (build ${{ steps.meta.outputs.build }})" \
+              --notes "Unsigned NTSC-U (RMCE01) base-game KartPad IPA. Bundle id dev.dxshdw.kartpadshadow. Re-sign before installing; import your own MarioKartShadow.iso on device. SHA-256: $(cut -d' ' -f1 "${asset}.sha256")"
+          fi
+          gh release upload "${tag}" "${asset}" --clobber
+
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_number }}
+          path: |
+            private/shadow/ios-device-xcode/CMakeFiles/*.log
+            build/builder-dependencies/*-build/CMakeFiles/*.log
+          if-no-files-found: ignore

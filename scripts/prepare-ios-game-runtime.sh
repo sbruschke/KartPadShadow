@@ -41,10 +41,14 @@ if [[ ! -f "${translation_root}/build_shards/shards.cmake" ]]; then
   echo "ERROR: missing real-title translation: ${translation_root}" >&2
   exit 1
 fi
+# KartPad Shadow: the NTSC-U base-only translation has no Retro Rewind REL
+# report guard (func_8000A440 is a PAL identity); KARTPAD_SHADOW=1 skips it.
+if [[ "${KARTPAD_SHADOW:-0}" != "1" ]]; then
 python3 "${repo_root}/scripts/inject-retro-rel-report-guard.py" --verify \
   "${translation_root}/functions/func_8000A440.cpp"
 python3 "${repo_root}/scripts/inject-retro-rel-report-guard.py" --verify-shards \
   "${translation_root}/build_shards"
+fi
 if [[ -e "${runtime_source}" || -e "${runtime_build}" ]]; then
   echo "ERROR: output already exists; choose fresh output paths" >&2
   exit 1

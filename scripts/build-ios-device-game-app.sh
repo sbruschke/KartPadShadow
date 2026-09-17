@@ -44,10 +44,14 @@ if [[ ! -f "${translation_root}/build_shards/shards.cmake" ]]; then
   echo "ERROR: missing real-title translation: ${translation_root}" >&2
   exit 66
 fi
+# KartPad Shadow: the NTSC-U base-only translation has no Retro Rewind REL
+# report guard (func_8000A440 is a PAL identity); KARTPAD_SHADOW=1 skips it.
+if [[ "${KARTPAD_SHADOW:-0}" != "1" ]]; then
 python3 "${repo_root}/scripts/inject-retro-rel-report-guard.py" --verify \
   "${translation_root}/functions/func_8000A440.cpp"
 python3 "${repo_root}/scripts/inject-retro-rel-report-guard.py" --verify-shards \
   "${translation_root}/build_shards"
+fi
 if [[ ! -f "${dawn_archive}" ]] ||
    [[ "$(shasum -a 256 "${dawn_archive}" | awk '{print $1}')" != "${dawn_sha256}" ]]; then
   echo "ERROR: missing or mismatched pinned physical-iOS Dawn archive" >&2
@@ -78,7 +82,10 @@ restore_generated_link() {
 trap restore_generated_link EXIT
 ln -sfn "${translation_root}" "${generated_link}"
 
-"${repo_root}/scripts/verify-sunpad-overlay-snapshot.sh"
+# KartPad Shadow CI has no ref/sunpad checkout; the snapshot is tracked in-repo.
+if [[ "${KARTPAD_SHADOW:-0}" != "1" ]]; then
+  "${repo_root}/scripts/verify-sunpad-overlay-snapshot.sh"
+fi
 plutil -lint "${repo_root}/apple/ios/RuntimeInfo.plist" \
   "${repo_root}/apple/ios/PrivacyInfo.xcprivacy" >/dev/null
 
@@ -110,12 +117,16 @@ cmake -S "${runtime_source}" -B "${xcode_build}" -G Xcode \
   -DMKW_KARTPAD_REPO_ROOT="${repo_root}" \
   -DMKW_KARTPAD_DISCIO_SOURCE_DIR="${discio_source}" \
   -DMKW_KARTPAD_DISCIO_BUILD_DIR="${discio_build}" \
-  -DMKW_TRANSLATED_COMPILE_JOBS=2
+  -DMKW_TRANSLATED_COMPILE_JOBS="${KARTPAD_TRANSLATED_COMPILE_JOBS:-2}" \
+  -DKARTPAD_SHADOW_BUNDLE_ID="${KARTPAD_SHADOW_BUNDLE_ID:-dev.dxshdw.kartpadshadow}" \
+  -DKARTPAD_SHADOW_MARKETING_VERSION="${KARTPAD_SHADOW_MARKETING_VERSION:-0.4.24}" \
+  -DKARTPAD_SHADOW_BUILD_NUMBER="${KARTPAD_SHADOW_BUILD_NUMBER:-1}"
 python3 "${repo_root}/scripts/write-build-provenance.py" --repo "${repo_root}" \
   --runtime "${runtime_source}" --translation "${translation_root}" \
   --output "${xcode_build}/kartpad-build.json"
 cmake --build "${xcode_build}" --config Release --target "${product_target}" -- \
-  -sdk iphoneos CODE_SIGNING_ALLOWED=NO
+  -sdk iphoneos CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO \
+  ${KARTPAD_XCODE_JOBS:+-jobs "${KARTPAD_XCODE_JOBS}"}
 
 cp "${xcode_build}/kartpad-build.json" "${app}/kartpad-build.json"
 "${repo_root}/scripts/audit-ios-game-app.sh" "${app}" IOS

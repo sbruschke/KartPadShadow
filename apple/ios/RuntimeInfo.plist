@@ -7,7 +7,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>KartPad connects to your selected private Wii server and other players on your local network.</string>
 	<key>CFBundleDisplayName</key>
-	<string>KartPad</string>
+	<string>KartPad Shadow</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
