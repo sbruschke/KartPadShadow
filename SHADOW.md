@@ -102,4 +102,6 @@ expected counts as well.
   submodules (`tests/test_kartpad_builder.py`) fail in this checkout. Run
   `tests/test_kartpad_shadow.py` instead.
 - The in-app help links still point to upstream KartPad documentation.
+- Keep `[network] enabled = true` in the app's `Config.toml`. This is the runtime default (`runtime_config.h` template and `NetworkEnabled(true)`), and the iOS host never changes it. The Linux smoke test showed that turning it off makes first boot fail: creating `wc24scr.vff` fails after CreateRKSYS, and the game reports "Could not write to/read from Wii system memory". This happens even though there is no online play.
+- For the base-only graph, `emit-build-shards` runs without `emit-base-manifest` and without `--profile`. This was checked on Linux: the shards emitted with `MKW_BASE_FUNCTION_COUNT 28874` and `MKW_HAVE_RETRO_REWIND_SHARDS OFF`. The Retro Rewind dual path is the one that needs the base manifest.
 - A different REL (any other Gecko code) needs new inputs and a rebuild.
