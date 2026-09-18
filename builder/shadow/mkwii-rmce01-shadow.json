@@ -15,10 +15,10 @@
       "sha256": "d2beec1b1645fcd134efe9e7e63774b546667764ed8d431029daccd725995694"
     },
     "rel": {
-      "name": "StaticR.shadow.rel",
+      "name": "StaticR.rel",
       "loadAddress": "0x8050BF60",
-      "sha256": "2657442e054c9f4cb2eb7c413cb2d9f7f52c1cda0d923f857baa444cd7c4cce6",
-      "note": "Clean RMCE01 StaticR.rel (1168107f...a617) with Gecko 0485F714 38000011 baked in at file offset 0x3537B4"
+      "sha256": "1168107f8fdef27a356df76036db55afe4fbf7752606dbac991726701133a617",
+      "note": "Clean RMCE01 StaticR.rel. The mod's shadow_voice.gct (0485F714 38000011) is deliberately NOT applied: it targets a Shadow brsar that replaces Birdo (GRP_VO_CA_*), while MarioKartShadow.iso replaces Peach (GRP_VO_PC_*), so baking it in gave every racer Birdo's vanilla voice in race. Dolphin runs this ISO with the code disabled too."
     }
   },
   "translation": {

@@ -119,3 +119,23 @@ macOS minutes at 10x. Because it is public:
 - `private-inputs/inputs.tar.gz.enc` stays committed: it is AES-256 ciphertext and
   the passphrase lives only in the `KARTPAD_INPUTS_KEY` secret and
   `~/.config/kartpadshadow/inputs.key`. Never commit the plaintext DOL/REL.
+
+## The shadow_voice.gct Gecko code is NOT applied (2026-09-17)
+
+Build 2 baked `0485F714 38000011` (from `~/Projects/Wii/MarioKartWii/shadow_voice.gct`)
+into StaticR.rel. That was wrong and build 3 reverts it.
+
+- `0x8085F714` is inside `Audio::CharacterActor::Link`; the code replaces
+  `r0 = [r4+8]` (the driver's character id) with a constant 17, for **every** driver,
+  once per race. Runtime logging showed the unpatched site writing the real ids
+  (player = 16 = Peach, i.e. Shadow's slot) and never running in the menus — which is
+  why character select sounded right while driving did not.
+- The mod ships two different Shadow brsars: the Riivolution copy replaces Birdo's
+  voice groups (`GRP_VO_CA_*`, id 17) while `MarioKartShadow.iso`'s own brsar replaces
+  Peach's (`GRP_VO_PC_*`, id 16). The Gecko code belongs to the Birdo variant, so against
+  this ISO it selected vanilla Birdo.
+- Dolphin has the code present in `GameSettings/RMCE01.ini` but with no `[Gecko_Enabled]`
+  section and cheats off, so the reference setup never applied it either.
+
+If a future disc image uses the Birdo-slot brsar, re-apply the patch at REL file offset
+0x3537B4 (= 0x8085F714 - load 0x8050BF60) and update the rel sha256 in the profile.

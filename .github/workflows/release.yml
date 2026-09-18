@@ -133,14 +133,14 @@ jobs:
       - name: Translate (NTSC-U base graph)
         run: |
           PYTHONPATH=builder python3 -m kartpad_builder.shadow translate \
-            --dol "${KARTPAD_INPUTS}/main.dol" --rel "${KARTPAD_INPUTS}/StaticR.shadow.rel" \
+            --dol "${KARTPAD_INPUTS}/main.dol" --rel "${KARTPAD_INPUTS}/StaticR.rel" \
             --out "${GITHUB_WORKSPACE}/private/shadow/translation" --jobs 3
 
       - name: Build IPA
         run: |
           mkdir -p artifacts
           PYTHONPATH=builder python3 -m kartpad_builder.shadow build \
-            --dol "${KARTPAD_INPUTS}/main.dol" --rel "${KARTPAD_INPUTS}/StaticR.shadow.rel" \
+            --dol "${KARTPAD_INPUTS}/main.dol" --rel "${KARTPAD_INPUTS}/StaticR.rel" \
             --work-root "${GITHUB_WORKSPACE}/private/shadow" \
             --output "artifacts/${{ steps.meta.outputs.asset }}" \
             --version "${{ steps.meta.outputs.version }}" \
