@@ -105,3 +105,17 @@ expected counts as well.
 - Keep `[network] enabled = true` in the app's `Config.toml`. This is the runtime default (`runtime_config.h` template and `NetworkEnabled(true)`), and the iOS host never changes it. The Linux smoke test showed that turning it off makes first boot fail: creating `wc24scr.vff` fails after CreateRKSYS, and the game reports "Could not write to/read from Wii system memory". This happens even though there is no online play.
 - For the base-only graph, `emit-build-shards` runs without `emit-base-manifest` and without `--profile`. This was checked on Linux: the shards emitted with `MKW_BASE_FUNCTION_COUNT 28874` and `MKW_HAVE_RETRO_REWIND_SHARDS OFF`. The Retro Rewind dual path is the one that needs the base manifest.
 - A different REL (any other Gecko code) needs new inputs and a rebuild.
+
+## Repo visibility and delivery (2026-09-17)
+
+The repo is **public** so GitHub-hosted macOS runners are free; private repos bill
+macOS minutes at 10x. Because it is public:
+
+- CI publishes **no GitHub Release**. The IPA is a workflow artifact only
+  (`gh run download <run-id> -R sbruschke/KartPadShadow -n KartPadShadow-<ver>-build<N>.ipa`).
+- Delivery to the phone goes through ipa-hub's local drop dir
+  `~/.local/share/ipa-hub/local/kartpadshadow/` (hub slug `kartpadshadow`,
+  `account: local`), then `systemctl --user start ipa-sync.service`.
+- `private-inputs/inputs.tar.gz.enc` stays committed: it is AES-256 ciphertext and
+  the passphrase lives only in the `KARTPAD_INPUTS_KEY` secret and
+  `~/.config/kartpadshadow/inputs.key`. Never commit the plaintext DOL/REL.
